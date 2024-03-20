@@ -1,63 +1,27 @@
-
 const express = require("express");
-const db = require("./fakeDb");
-const router = new express.Router();
 
-const { NotFoundError } = require("./expressError");
 const app = express();
-
-// const userRoutes = require("./userRoutes");
-// const { logger, onlyAllowElie } = require("./middleware");
+const shoppingRoutes = require("./route");
+const { NotFoundError } = require("./expressError");
 
 app.use(express.json());
+app.use(express.urlencoded());
 
-router.get('/items', function (req, res) {
-  return res.json(db.items.all());
-});
+app.use("/items", shoppingRoutes);
 
-router.post('/items', function (req, res) {
-  if (req.body === undefined) throw new BadRequestError();
-  const item = {
-    name: req.body.name,
-    price: req.body.price
-  };
-  db.items.append(item);
-  return res.status(201).json({ added: item });
-});
 
-router.get('/items/:name', function (req, res) {
-  const itemName = req.params.name;
-
-  for (item in db.items) {
-    if (item.name === itemName) {
-      return res.json({ item });
-    }
-  }
+/** 404 handler: matches unmatched routes; raises NotFoundError. */
+app.use(function (req, res, next) {
   throw new NotFoundError();
 });
 
-router.patch('/items/:name', function (req, res) {
-  const updatedItem = {
-    name: req.body.name,
-    price: req.body.price
-  };
-
-  for (item in db.items) {
-    if (item.name === req.params.name) {
-      item = updatedItem;
-      return res.json({ updatedItem });
-    }
-  }
-  throw new NotFoundError();
-});
-
-router.delete('/items/:name', function (req, res) {
-  const itemName = req.params.name;
-
-  db.items = db.items.filter(item => item.name !== itemName);
-
-  return res.json({ message: "Deleted" });
+/** Error handler: logs stacktrace and returns JSON error message. */
+app.use(function (err, req, res, next) {
+  const status = err.status || 500;
+  const message = err.message;
+  if (process.env.NODE_ENV !== "test") console.error(status, err.stack);
+  return res.status(status).json({ error: { message, status } });
 });
 
 
-module.exports = router;
+module.exports = app;

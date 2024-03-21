@@ -35,12 +35,12 @@ router.post('/', function (req, res) {
 router.get('/:name', function (req, res) {
   const itemName = req.params.name;
   // use find() instead of loop
-  for (item of db.items) {
-    if (item.name === itemName) {
-      console.log(item);
-      return res.json(item);
-    }
+  const item = db.items.find((item) => item.name === req.params.name)
+
+  if (item) {
+    return res.json(item);
   }
+
   throw new NotFoundError();
 });
 
@@ -53,11 +53,10 @@ router.patch('/:name', function (req, res) {
     price: req.body.price
   };
 
-  for (item of db.items) {
-    if (item.name === req.params.name) {
-      item = updatedItem;
+  const item = db.items.find((item) => item.name === req.params.name)
+  if (item) {
+    item = updatedItem;
       return res.json({ updatedItem });
-    }
   }
   throw new NotFoundError();
 });
